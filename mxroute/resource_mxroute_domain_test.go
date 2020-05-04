@@ -2,6 +2,7 @@ package mxroute
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -39,13 +40,14 @@ func init() {
 
 			return nil
 		},
-	});
+	})
 }
 
 func TestAccMxRouteDomain_basic(t *testing.T) {
 	t.Parallel()
 
 	domainName := TestDomainPrefix + generateRandomResourceName() + ".email"
+	name := "mxroute_domain.foobar"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -54,6 +56,9 @@ func TestAccMxRouteDomain_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccCheckMxRouteDomainConfig(domainName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(name, "dkim", regexp.MustCompile(`.+`)),
+				),
 			},
 		},
 	})

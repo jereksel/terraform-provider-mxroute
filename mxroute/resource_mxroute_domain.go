@@ -18,6 +18,10 @@ func resourceDomain() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"dkim": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -34,7 +38,7 @@ func resourceDomainCreate(d *schema.ResourceData, m interface{}) error {
 func resourceDomainRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(config)
 	domainName := d.Get("name").(string)
-	allDomains, err := api.GetAllDomains(config.Username, config.Password);
+	allDomains, err := api.GetAllDomains(config.Username, config.Password)
 	if err != nil {
 		return err
 	}

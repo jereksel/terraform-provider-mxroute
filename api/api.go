@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 )
 
 // GetAllDomains returns all domains for given account
@@ -94,4 +96,34 @@ func RemoveDomain(username string, password string, domainName string) error {
 		return fmt.Errorf("error returned from DirectAdmin API. Text: %s, Details: %s", values["text"][0], values["details"][0])
 	}
 	return nil
+}
+
+func GetDomainDkim(username string, password string, domainName string) (string, error) {
+	return "", nil
+}
+
+func ExtractDcim(str string) (string, error) {
+	re := regexp.MustCompile(`"(.*?)"`)
+
+	domainKeyBlock := false
+	domainKey := ""
+
+	for _, line := range strings.Split(str, "\n") {
+
+		if domainKeyBlock && !strings.HasPrefix(line, "\t") {
+			domainKeyBlock = false
+		}
+
+		if strings.HasPrefix(line, "x._domainkey") {
+			domainKeyBlock = true
+		}
+
+		if domainKeyBlock {
+			domainKey = domainKey + re.FindAllStringSubmatch(line, -1)[0][1]
+		}
+
+	}
+
+	return domainKey, nil
+
 }
