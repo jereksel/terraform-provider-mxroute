@@ -10,9 +10,9 @@ import (
 )
 
 // GetAllDomains returns all domains for given account
-func GetAllDomains(username string, password string) ([]string, error) {
+// https://www.directadmin.com/features.php?id=336
+func GetAllDomains(username, password string) ([]string, error) {
 	client := &http.Client{}
-	//https://www.directadmin.com/features.php?id=336
 	req, err := http.NewRequest("GET", "https://echo.mxrouting.net:2222/CMD_API_SHOW_DOMAINS", nil)
 	if err != nil {
 		return nil, err
@@ -35,14 +35,14 @@ func GetAllDomains(username string, password string) ([]string, error) {
 }
 
 //TODO: Test invalid domainName
-func CreateDomain(username string, password string, domainName string) error {
+//https://www.directadmin.com/features.php?id=498
+func CreateDomain(username, password, domainName string) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://echo.mxrouting.net:2222/CMD_API_DOMAIN", nil)
 	if err != nil {
 		return err
 	}
 	q := req.URL.Query()
-	//https://www.directadmin.com/features.php?id=498
 	q.Add("action", "create")
 	q.Add("domain", domainName)
 	req.URL.RawQuery = q.Encode()
@@ -66,14 +66,14 @@ func CreateDomain(username string, password string, domainName string) error {
 	return nil
 }
 
-func RemoveDomain(username string, password string, domainName string) error {
+//https://www.directadmin.com/features.php?id=498
+func RemoveDomain(username, password, domainName string) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://echo.mxrouting.net:2222/CMD_API_DOMAIN", nil)
 	if err != nil {
 		return err
 	}
 	q := req.URL.Query()
-	//https://www.directadmin.com/features.php?id=498
 	q.Add("delete", "anything")
 	q.Add("confirmed", "anything")
 	q.Add("select0", domainName)
@@ -98,11 +98,34 @@ func RemoveDomain(username string, password string, domainName string) error {
 	return nil
 }
 
-func GetDomainDkim(username string, password string, domainName string) (string, error) {
-	return "", nil
+//https://www.directadmin.com/features.php?id=504
+func GetDomainDkim(username, password, domainName string) (*string, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "https://echo.mxrouting.net:2222/CMD_API_DNS_CONTROL", nil)
+	if err != nil {
+		return nil, err
+	}
+	q := req.URL.Query()
+	q.Add("domain", domainName)
+	req.URL.RawQuery = q.Encode()
+	req.SetBasicAuth(username, password)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	bodyText, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	s := string(bodyText)
+	dkim, err := extractDkim(s)
+	if err != nil {
+		return nil, err
+	}
+	return &dkim, nil
 }
 
-func ExtractDcim(str string) (string, error) {
+func extractDkim(str string) (string, error) {
 	re := regexp.MustCompile(`"(.*?)"`)
 
 	domainKeyBlock := false
@@ -119,11 +142,13 @@ func ExtractDcim(str string) (string, error) {
 		}
 
 		if domainKeyBlock {
+			//TODO: Add size check
 			domainKey = domainKey + re.FindAllStringSubmatch(line, -1)[0][1]
 		}
 
 	}
 
+	//TODO: Return error when domainKey is empty
 	return domainKey, nil
 
 }

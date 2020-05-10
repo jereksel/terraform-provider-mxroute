@@ -38,18 +38,19 @@ func resourceDomainCreate(d *schema.ResourceData, m interface{}) error {
 func resourceDomainRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(config)
 	domainName := d.Get("name").(string)
-	allDomains, err := api.GetAllDomains(config.Username, config.Password)
+	doesDomainExists, err := api.DoesDomainExist(config.Username, config.Password, domainName)
 	if err != nil {
 		return err
 	}
-	exists := false
-	for _, domain := range allDomains {
-		if domain == domainName {
-			exists = true
+	if *doesDomainExists {
+		dkim, err := api.GetDomainDkim(config.Username, config.Password, domainName)
+		if err != nil {
+			return err
 		}
-	}
-	if exists {
 		d.SetId(domainName)
+		if err := d.Set("dkim", dkim); err != nil {
+			return err
+		}
 	} else {
 		d.SetId("")
 	}

@@ -44,10 +44,8 @@ func init() {
 }
 
 func TestAccMxRouteDomain_basic(t *testing.T) {
-	t.Parallel()
-
 	domainName := TestDomainPrefix + generateRandomResourceName() + ".email"
-	name := "mxroute_domain.foobar"
+	resourceName := "mxroute_domain.foobar"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -57,7 +55,7 @@ func TestAccMxRouteDomain_basic(t *testing.T) {
 			{
 				Config: testAccCheckMxRouteDomainConfig(domainName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestMatchResourceAttr(name, "dkim", regexp.MustCompile(`.+`)),
+					resource.TestMatchResourceAttr(resourceName, "dkim", regexp.MustCompile(`.+`)),
 				),
 			},
 		},
@@ -77,15 +75,17 @@ func testAccCheckMxRouteDomainDestroy(s *terraform.State) error {
 			continue
 		}
 
+		resourceDomain := rs.Primary.Attributes["name"]
+
 		exists := false
 		for _, domain := range allDomains {
-			if domain == rs.Primary.Attributes["name"] {
+			if domain == resourceDomain {
 				exists = true
 			}
 		}
 
 		if exists {
-			return fmt.Errorf("domain still exists")
+			return fmt.Errorf("domain '%s' still exists", resourceDomain)
 		}
 
 	}
@@ -95,7 +95,11 @@ func testAccCheckMxRouteDomainDestroy(s *terraform.State) error {
 
 func testAccCheckMxRouteDomainConfig(domainName string) string {
 	return fmt.Sprintf(`
-resource "mxroute_domain" "foobar" {
-	name = "%s"
-}`, domainName)
+
+		resource "mxroute_domain" "foobar" {
+			name = "%s"
+		}
+
+
+`, domainName)
 }

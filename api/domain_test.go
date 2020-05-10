@@ -5,8 +5,7 @@ import (
 	"testing"
 )
 
-func TestExtractingDcim(t *testing.T) {
-	//var re = regexp.MustCompile(`(?m)".*"`)
+func TestExtractingDkim(t *testing.T) {
 
 	//Given
 	str := `
@@ -42,10 +41,10 @@ x._domainkey	14400	IN	TXT	( "v=DKIM1; k=rsa; p=LINE1"
 `
 
 	//When
-	dcim, err := ExtractDcim(str)
+	dkim, err := extractDkim(str)
 
 	//Then
 	assert.Empty(t, err)
-	assert.Equal(t, "v=DKIM1; k=rsa; p=LINE1LINE2LINE3", dcim)
+	assert.Equal(t, "v=DKIM1; k=rsa; p=LINE1LINE2LINE3", dkim)
 
 }

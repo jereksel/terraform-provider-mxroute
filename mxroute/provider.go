@@ -23,7 +23,8 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"mxroute_domain": resourceDomain(),
+			"mxroute_domain":        resourceDomain(),
+			"mxroute_email_account": resourceEmailAccount(),
 		},
 		ConfigureFunc: func(d *schema.ResourceData) (interface{}, error) {
 			username := d.Get("username").(string)
