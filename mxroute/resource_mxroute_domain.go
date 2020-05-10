@@ -23,6 +23,10 @@ func resourceDomain() *schema.Resource {
 				Computed: true,
 			},
 		},
+
+		Importer: &schema.ResourceImporter{
+			State: resourceDomainImport,
+		},
 	}
 }
 
@@ -61,4 +65,16 @@ func resourceDomainDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(config)
 	domainName := d.Get("name").(string)
 	return api.RemoveDomain(config.Username, config.Password, domainName)
+}
+
+func resourceDomainImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	if err := d.Set("name", d.Id()); err != nil {
+		return nil, err
+	}
+
+	if err := resourceDomainRead(d, meta); err != nil {
+		return nil, err
+	}
+	return []*schema.ResourceData{d}, nil
 }

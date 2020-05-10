@@ -58,6 +58,15 @@ func TestAccMxRouteDomain_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "dkim", regexp.MustCompile(`.+`)),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportStateId:     domainName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(resourceName, "dkim", regexp.MustCompile(`.+`)),
+				),
+			},
 		},
 	})
 }

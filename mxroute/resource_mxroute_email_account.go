@@ -99,3 +99,8 @@ func resourceEmailAccountDelete(d *schema.ResourceData, m interface{}) error {
 	emailUsername := d.Get("username").(string)
 	return api.RemoveEmailAccount(config.Username, config.Password, domainName, emailUsername)
 }
+
+func resourceEmailAccountImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	return []*schema.ResourceData{d}, nil
+}
