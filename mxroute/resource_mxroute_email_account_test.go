@@ -11,6 +11,11 @@ import (
 func TestAccMxRouteEmailAccount_basic(t *testing.T) {
 
 	domainName := TestDomainPrefix + generateRandomResourceName() + ".email"
+	emailUsername1 := "username1"
+	emailPassword1 := "password1"
+
+	emailUsername2 := "username2"
+	emailPassword2 := "password2"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -18,15 +23,48 @@ func TestAccMxRouteEmailAccount_basic(t *testing.T) {
 		CheckDestroy: testAccCheckMxRouteDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName),
+				Config: testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName, emailUsername1, emailPassword1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMxRouteDomainContainsEmail(domainName),
+					testAccCheckMxRouteDomainContainsEmail(domainName, emailUsername1),
+					testAccCheckMxRouteDomainDoesNotContainEmail(domainName, emailUsername2),
+					testAccCheckMxRouteEmailPasswordIsCorrect(domainName, emailUsername1, emailPassword1),
+					testAccCheckMxRouteEmailPasswordIsIncorrect(domainName, emailUsername1, emailPassword2),
+				),
+			},
+			//Change password
+			{
+				Config: testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName, emailUsername1, emailPassword2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMxRouteDomainContainsEmail(domainName, emailUsername1),
+					testAccCheckMxRouteDomainDoesNotContainEmail(domainName, emailUsername2),
+					testAccCheckMxRouteEmailPasswordIsCorrect(domainName, emailUsername1, emailPassword2),
+					testAccCheckMxRouteEmailPasswordIsIncorrect(domainName, emailUsername1, emailPassword1),
+				),
+			},
+			//Change username
+			{
+				Config: testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName, emailUsername2, emailPassword2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMxRouteDomainContainsEmail(domainName, emailUsername2),
+					testAccCheckMxRouteDomainDoesNotContainEmail(domainName, emailUsername1),
+					testAccCheckMxRouteEmailPasswordIsCorrect(domainName, emailUsername2, emailPassword2),
+					testAccCheckMxRouteEmailPasswordIsIncorrect(domainName, emailUsername2, emailPassword1),
+				),
+			},
+			//Change username and password and the same time
+			{
+				Config: testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName, emailUsername1, emailPassword1),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMxRouteDomainContainsEmail(domainName, emailUsername1),
+					testAccCheckMxRouteDomainDoesNotContainEmail(domainName, emailUsername2),
+					testAccCheckMxRouteEmailPasswordIsCorrect(domainName, emailUsername1, emailPassword1),
+					testAccCheckMxRouteEmailPasswordIsIncorrect(domainName, emailUsername1, emailPassword2),
 				),
 			},
 			{
 				Config: testAccCheckMxRouteEmailAccountConfigDomainWithoutEmail(domainName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckMxRouteDomainDoesNotContainEmail(domainName),
+					testAccCheckMxRouteDomainDoesNotContainAnyEmails(domainName),
 				),
 			},
 		},
@@ -34,7 +72,7 @@ func TestAccMxRouteEmailAccount_basic(t *testing.T) {
 
 }
 
-func testAccCheckMxRouteDomainContainsEmail(domainName string) resource.TestCheckFunc {
+func testAccCheckMxRouteDomainContainsEmail(domainName string, emailUsername string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
 		client := testAccProvider.Meta().(config)
@@ -45,14 +83,44 @@ func testAccCheckMxRouteDomainContainsEmail(domainName string) resource.TestChec
 		}
 
 		if len(emails) == 0 {
-			return fmt.Errorf("domain %s does not contain emails", domainName)
+			return fmt.Errorf("domain '%s' does not contain emails", domainName)
+		}
+		if len(emails) > 1 {
+			return fmt.Errorf("domain '%s' contains more than one email '%v'", domainName, emails)
+		}
+		if emails[0] != emailUsername {
+			return fmt.Errorf("domain '%s' should have only email '%s', but has '%s'", domainName, emails[0], emailUsername)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckMxRouteDomainDoesNotContainEmail(domainName string) resource.TestCheckFunc {
+func testAccCheckMxRouteDomainDoesNotContainEmail(domainName string, emailUsername string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+
+		client := testAccProvider.Meta().(config)
+
+		emails, err := api.GetEmailAccounts(client.Username, client.Password, domainName)
+		if err != nil {
+			return err
+		}
+
+		if len(emails) == 0 {
+			return fmt.Errorf("domain '%s' does not contain emails", domainName)
+		}
+		if len(emails) > 1 {
+			return fmt.Errorf("domain '%s' contains more than one email '%v'", domainName, emails)
+		}
+		if emails[0] == emailUsername {
+			return fmt.Errorf("domain '%s' should NOT have email '%s', but it has", domainName, emailUsername)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckMxRouteDomainDoesNotContainAnyEmails(domainName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
 		client := testAccProvider.Meta().(config)
@@ -63,7 +131,7 @@ func testAccCheckMxRouteDomainDoesNotContainEmail(domainName string) resource.Te
 		}
 
 		if len(emails) > 0 {
-			return fmt.Errorf("domain %s contains emails %v", domainName, emails)
+			return fmt.Errorf("domain '%s' contains emails '%v'", domainName, emails)
 		}
 
 		return nil
@@ -71,7 +139,44 @@ func testAccCheckMxRouteDomainDoesNotContainEmail(domainName string) resource.Te
 
 }
 
-func testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName string) string {
+func testAccCheckMxRouteEmailPasswordIsCorrect(domainName, emailUsername, emailPassword string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+
+		client := testAccProvider.Meta().(config)
+
+		passwordIsCorrect, err := api.CheckPasswordIsCorrect(client.Username, client.Password, domainName, emailUsername, emailPassword)
+		if err != nil {
+			return err
+		}
+
+		if !*passwordIsCorrect {
+			return fmt.Errorf("password '%s' is incorrect, but should be correct", emailPassword)
+		}
+
+		return nil
+	}
+}
+
+// In theory only Correct would be sufficient, but I also want to test if api.CheckPasswordIsCorrect works correctly
+func testAccCheckMxRouteEmailPasswordIsIncorrect(domainName, emailUsername, emailPassword string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+
+		client := testAccProvider.Meta().(config)
+
+		passwordIsCorrect, err := api.CheckPasswordIsCorrect(client.Username, client.Password, domainName, emailUsername, emailPassword)
+		if err != nil {
+			return err
+		}
+
+		if *passwordIsCorrect {
+			return fmt.Errorf("password '%s' is correct, but should be incorrect", emailPassword)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName, emailUsername, emailPassword string) string {
 	return fmt.Sprintf(`
 		
 		resource "mxroute_domain" "foobar" {
@@ -80,11 +185,11 @@ func testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName string) str
 	
 		resource "mxroute_email_account" "email" {
 			domain = mxroute_domain.foobar.name
-			username = "email"
-			password = "password"
+			username = "%s"
+			password = "%s"
 		}
 
-`, domainName)
+`, domainName, emailUsername, emailPassword)
 }
 
 func testAccCheckMxRouteEmailAccountConfigDomainWithoutEmail(domainName string) string {
