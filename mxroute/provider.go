@@ -11,13 +11,13 @@ func Provider() terraform.ResourceProvider {
 		Schema: map[string]*schema.Schema{
 			"username": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MXROUTE_USERNAME", nil),
 				Description: "Username for DirectAdmin (NOT MXROUTE) account",
 			},
 			"password": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MXROUTE_PASSWORD", nil),
 				Description: "Password/Login Key for DirectAdmin (NOT MXROUTE) account",
 			},
