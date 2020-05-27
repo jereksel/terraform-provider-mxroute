@@ -1,8 +1,10 @@
 package mxroute
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/jereksel/terraform-provider-mxroute/api"
+	"strings"
 )
 
 func resourceEmailAccount() *schema.Resource {
@@ -27,6 +29,10 @@ func resourceEmailAccount() *schema.Resource {
 				Required:  true,
 				Sensitive: true,
 			},
+		},
+
+		Importer: &schema.ResourceImporter{
+			State: resourceEmailAccountImport,
 		},
 	}
 }
@@ -102,5 +108,22 @@ func resourceEmailAccountDelete(d *schema.ResourceData, m interface{}) error {
 
 func resourceEmailAccountImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
+	parts := strings.Split(d.Id(), "@")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("provided email is in invalid format")
+	}
+
+	if err := d.Set("username", parts[0]); err != nil {
+		return nil, err
+	}
+	if err := d.Set("domain", parts[1]); err != nil {
+		return nil, err
+	}
+
+	if err := resourceEmailAccountRead(d, meta); err != nil {
+		return nil, err
+	}
+
 	return []*schema.ResourceData{d}, nil
+
 }

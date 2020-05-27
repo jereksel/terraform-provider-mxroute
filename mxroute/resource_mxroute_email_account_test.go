@@ -72,6 +72,32 @@ func TestAccMxRouteEmailAccount_basic(t *testing.T) {
 
 }
 
+func TestAccMxRouteEmailAccount_import(t *testing.T) {
+
+	domainName := TestDomainPrefix + generateRandomResourceName() + ".email"
+	emailUsername := "username"
+	emailPassword := "password"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckMxRouteDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckMxRouteEmailAccountConfigDomainWithEmail(domainName, emailUsername, emailPassword),
+			},
+			{
+				ResourceName:            "mxroute_email_account.email",
+				ImportStateId:           emailUsername + "@" + domainName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password"},
+			},
+		},
+	})
+
+}
+
 func testAccCheckMxRouteDomainContainsEmail(domainName string, emailUsername string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
