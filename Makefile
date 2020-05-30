@@ -73,6 +73,6 @@ ifeq (,$(wildcard $(U_WEBSITE_REPO_DIR)))
 	git clone https://$(U_WEBSITE_REPO) $(U_WEBSITE_REPO_DIR)
 endif
 	@$(MAKE) -C $(U_WEBSITE_REPO_DIR) sync
-	@$(MAKE) -C $(U_WEBSITE_REPO_DIR) build PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+	@$(MAKE) -C $(U_WEBSITE_REPO_DIR) build PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME) BASE_PATH=terraform-provider-mxroute
 
 .PHONY: build test testacc vet fmt fmtcheck errcheck test-compile website website-test
