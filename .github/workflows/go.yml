@@ -41,3 +41,5 @@ jobs:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         BRANCH: gh-pages
         FOLDER: website/build
+        SINGLE_COMMIT: true
+        CLEAN: true
