@@ -1,12 +1,9 @@
-name: Deploy website
-
 on:
   push:
     branches: [website-test]
 
 jobs:
   build:
-    name: Deploy website
     runs-on: ubuntu-latest
     steps:
 
