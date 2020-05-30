@@ -3,6 +3,7 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=mxroute
 U_WEBSITE_REPO=github.com/jereksel/u-terraform-website
+U_WEBSITE_REPO_DIR=$(CURDIR)/.u-website
 
 default: build
 
@@ -59,19 +60,19 @@ endif
 	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
 u-website:
-ifeq (,$(wildcard $(GOPATH)/src/$(U_WEBSITE_REPO)))
-	echo "$(U_WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
-	git clone git@github.com:jereksel/u-terraform-website.git $(GOPATH)/src/$(U_WEBSITE_REPO)
+ifeq (,$(wildcard $(U_WEBSITE_REPO_DIR)))
+	echo "Cloning µ-terraform-website to ${U_WEBSITE_REPO_DIR}"
+	git clone https://$(U_WEBSITE_REPO) $(U_WEBSITE_REPO_DIR)
 endif
-	@$(MAKE) -C $(GOPATH)/src/$(U_WEBSITE_REPO) sync
-	@$(MAKE) -C $(GOPATH)/src/$(U_WEBSITE_REPO) website PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+	@$(MAKE) -C $(U_WEBSITE_REPO_DIR) sync
+	@$(MAKE) -C $(U_WEBSITE_REPO_DIR) website PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
 u-website-build:
-ifeq (,$(wildcard $(GOPATH)/src/$(U_WEBSITE_REPO)))
-	echo "$(U_WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
-	git clone git@github.com:jereksel/u-terraform-website.git $(GOPATH)/src/$(U_WEBSITE_REPO)
+ifeq (,$(wildcard $(U_WEBSITE_REPO_DIR)))
+	echo "Cloning µ-terraform-website to ${U_WEBSITE_REPO_DIR}"
+	git clone https://$(U_WEBSITE_REPO) $(U_WEBSITE_REPO_DIR)
 endif
-	@$(MAKE) -C $(GOPATH)/src/$(U_WEBSITE_REPO) sync
-	@$(MAKE) -C $(GOPATH)/src/$(U_WEBSITE_REPO) build PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+	@$(MAKE) -C $(U_WEBSITE_REPO_DIR) sync
+	@$(MAKE) -C $(U_WEBSITE_REPO_DIR) build PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
 .PHONY: build test testacc vet fmt fmtcheck errcheck test-compile website website-test
